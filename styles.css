@@ -725,7 +725,7 @@ body.touch #pad-badge { display: none !important; }
     padding: 26px 22px 78px;
   }
   .start-main { max-width: none; }
-  #start-screen h1 { font-size: clamp(52px, 17vw, 96px); }
+  #start-screen h1 { font-size: clamp(46px, 14.5vw, 88px); }
   .tagline { margin-top: 14px; }
   .start-actions { margin-top: 22px; gap: 18px; flex-wrap: wrap; }
   #start-btn { padding: 17px 38px 15px; }
