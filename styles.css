@@ -402,6 +402,26 @@ body.touch #pad-badge { display: none !important; }
   touch-action: none;
 }
 
+#action-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ollie-action {
+  border-color: rgba(255, 90, 31, 0.65);
+  background: rgba(255, 90, 31, 0.24);
+  color: #fff3e9;
+}
+.ollie-action span { color: rgba(255, 224, 200, 0.75); }
+.ollie-action.active {
+  transform: scale(0.94);
+  background: rgba(255, 90, 31, 0.62);
+  border-color: var(--orange-soft);
+  box-shadow: 0 0 22px rgba(255, 90, 31, 0.45);
+}
+
 .touch-label {
   font: 700 7px/1 var(--mono);
   letter-spacing: 1.8px;

@@ -38,6 +38,7 @@ export class Input {
     this.padStart = { x: 0, y: 0, t: 0 };
     this.padFlicked = false;
     this.grabPointer = null;
+    this.olliePointer = null;
 
     this._bindKeyboard();
     this._bindTouch();
@@ -59,6 +60,7 @@ export class Input {
       this.keys.clear();
       this.keyVector.x = this.keyVector.y = 0;
       this.jumpHeld = false;
+      this.jumpReleased = true;
       this.grab = false;
       this.touchVector.x = this.touchVector.y = 0;
       this._releaseStick();
@@ -228,6 +230,31 @@ export class Input {
     grabBtn.addEventListener('pointerup', endGrab);
     grabBtn.addEventListener('pointercancel', endGrab);
     grabBtn.addEventListener('lostpointercapture', endGrab);
+
+    // dedicated ollie button — tap for a quick pop, hold to charge
+    const ollieBtn = document.getElementById('ollie-btn');
+    if (ollieBtn) {
+      ollieBtn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        if (this.olliePointer !== null) return;
+        this.olliePointer = e.pointerId;
+        this.anyPressed = true;
+        this.jumpPressed = true;
+        this.jumpHeld = true;
+        ollieBtn.classList.add('active');
+        try { ollieBtn.setPointerCapture(e.pointerId); } catch { /* synthetic / unsupported */ }
+      });
+      const endOllie = e => {
+        if (e.pointerId !== this.olliePointer) return;
+        this.olliePointer = null;
+        this.jumpReleased = true;
+        this.jumpHeld = false;
+        ollieBtn.classList.remove('active');
+      };
+      ollieBtn.addEventListener('pointerup', endOllie);
+      ollieBtn.addEventListener('pointercancel', endOllie);
+      ollieBtn.addEventListener('lostpointercapture', endOllie);
+    }
 
     // tapping the trick pad itself should work even if pointer captures odd
     trickPad.addEventListener('lostpointercapture', e => {
