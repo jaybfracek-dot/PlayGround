@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#141311">
+<meta name="description" content="Goodwood Skate — a 3D street skateboarding session with touch controls and USB-C / Bluetooth controller support.">
+<title>Goodwood Skate — 3D Street Session</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="game" aria-label="3D skatepark"></canvas>
+
+  <div id="vignette"></div>
+  <div id="flash"></div>
+
+  <!-- ============ HUD ============ -->
+  <div id="hud" class="hidden" aria-live="polite">
+    <header class="hud-top">
+      <div class="brand">
+        <div class="brand-slash">G<span>//</span>S</div>
+        <div class="brand-copy">
+          <strong>GOODWOOD<span>//</span>SKATE</strong>
+          <em id="hud-best">BEST 0</em>
+        </div>
+      </div>
+
+      <div class="timer-block">
+        <div id="timer">2:00</div>
+        <div class="hud-label">SESSION</div>
+        <div id="letters" class="letter-row">
+          <b data-letter="S">S</b><b data-letter="K">K</b><b data-letter="A">A</b><b data-letter="T">T</b><b data-letter="E">E</b>
+        </div>
+      </div>
+
+      <div class="score-block">
+        <div id="score">0</div>
+        <div class="hud-label">SCORE</div>
+        <div class="hud-buttons">
+          <button id="mute-btn" class="icon-btn" aria-label="Toggle sound" title="Sound">♪</button>
+          <button id="pause-btn" class="icon-btn" aria-label="Pause" title="Pause">Ⅱ</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="combo-wrap" class="hidden">
+      <div id="combo-mult">x1.0</div>
+      <div class="combo-copy">
+        <span id="combo-bank">0</span>
+        <i id="combo-bar"><b></b></i>
+      </div>
+    </div>
+
+    <div id="trick-feed" aria-hidden="true"></div>
+
+    <div id="center-toast" class="hidden"><span></span></div>
+
+    <div id="balance-wrap" class="hidden">
+      <div class="balance-label"><span>BALANCE</span><em id="balance-mode">GRIND</em></div>
+      <div id="balance-track"><div class="balance-safe"></div><i id="balance-marker"></i></div>
+    </div>
+
+    <div id="speedo">
+      <div class="speedo-copy"><span>SPEED</span><b id="speed-val">0</b><em>KM/H</em></div>
+      <div id="speed-bar"><b></b></div>
+    </div>
+
+    <div id="pad-badge" class="hidden"><i></i><span>PAD</span></div>
+  </div>
+
+  <!-- ============ TOUCH CONTROLS ============ -->
+  <div id="touch-controls" aria-hidden="true">
+    <div id="stick-zone">
+      <div id="stick-base"><div id="stick-knob"></div></div>
+      <span class="touch-label">MOVE</span>
+    </div>
+
+    <div id="touch-right">
+      <button id="grab-btn" class="touch-action" aria-label="Grab">GRAB<span>HOLD</span></button>
+      <div id="trick-zone">
+        <div id="trick-pad">
+          <span class="pad-arrow up">▲</span>
+          <span class="pad-arrow down">▼</span>
+          <span class="pad-arrow left">◀</span>
+          <span class="pad-arrow right">▶</span>
+          <div class="pad-core">
+            <strong>FLICK</strong>
+            <span>TRICKS</span>
+          </div>
+        </div>
+        <span class="touch-label">SWIPE · TAP TO OLLIE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ START ============ -->
+  <section id="start-screen" class="overlay">
+    <div class="start-shade"></div>
+    <div class="start-inner">
+      <div class="start-main">
+        <div class="eyebrow"><i></i> STREET SESSION <b>02</b> / GOLDEN HOUR</div>
+        <h1>GOODWOOD<span>//</span><br>SKATE</h1>
+        <p class="tagline">Flick it. Lock it. <em>Land bolts.</em></p>
+
+        <div class="start-actions">
+          <button id="start-btn" aria-label="Start">START</button>
+          <div class="start-meta">
+            <strong>2:00 SESSION</strong>
+            <span>Score as much as you can before the buzzer.</span>
+          </div>
+        </div>
+
+        <div class="start-badges">
+          <div class="badge"><i class="dot"></i><span>USB-C + BLUETOOTH CONTROLLERS</span></div>
+          <div id="pad-status" class="pad-status">NO PAD — PRESS A BUTTON TO WAKE ONE</div>
+        </div>
+
+        <div class="high-score">PERSONAL BEST <b id="start-best">0</b></div>
+      </div>
+
+      <aside class="start-side">
+        <h2>HOW TO SKATE</h2>
+        <div class="control-row">
+          <div class="ctrl-icon">◉</div>
+          <div><strong>MOVE</strong><span>Left stick / WASD to carve and push</span></div>
+        </div>
+        <div class="control-row">
+          <div class="ctrl-icon">↥</div>
+          <div><strong>OLLIE</strong><span>Tap trick pad / Space. Hold to charge higher</span></div>
+        </div>
+        <div class="control-row">
+          <div class="ctrl-icon">↯</div>
+          <div><strong>TRICKS</strong><span>Swipe right pad / right stick to flick flips</span></div>
+        </div>
+        <div class="control-row">
+          <div class="ctrl-icon">═</div>
+          <div><strong>GRIND</strong><span>Land on a rail, balance with the left stick</span></div>
+        </div>
+        <div class="control-row">
+          <div class="ctrl-icon">✊</div>
+          <div><strong>GRAB</strong><span>Hold X / Shift / GRAB in the air for style</span></div>
+        </div>
+        <div class="side-note">Collect <b>S K A T E</b> letters around the park for a bonus.</div>
+      </aside>
+    </div>
+    <div class="start-footer">
+      <span>TOUCH READY</span><span>GAMEPAD API</span><span>60 FPS WEBGL</span>
+      <b>NO DOWNLOADS. JUST SKATE.</b>
+    </div>
+  </section>
+
+  <!-- ============ PAUSE ============ -->
+  <section id="pause-screen" class="overlay hidden">
+    <div class="pause-card">
+      <div class="eyebrow"><i></i> SESSION PAUSED</div>
+      <h2>TAKE A BREATH.</h2>
+      <div class="pause-stats">
+        <div><span>SCORE</span><b id="pause-score">0</b></div>
+        <div><span>TIME</span><b id="pause-time">2:00</b></div>
+      </div>
+      <button id="resume-btn" class="big-btn" aria-label="Resume">RESUME</button>
+      <button id="quit-btn" class="text-btn">END SESSION</button>
+      <p class="tiny">Esc / controller Start to resume</p>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="results-screen" class="overlay hidden">
+    <div class="results-card">
+      <div class="eyebrow"><i></i> SESSION COMPLETE</div>
+      <h2 id="results-title">NICE LINE.</h2>
+      <div class="final-score"><span>FINAL SCORE</span><b id="final-score">0</b></div>
+      <div class="result-grid">
+        <div><span>BEST TRICK</span><b id="result-trick">—</b></div>
+        <div><span>TRICKS LANDED</span><b id="result-tricks">0</b></div>
+        <div><span>LETTERS</span><b id="result-letters">0 / 5</b></div>
+        <div><span>PERSONAL BEST</span><b id="result-best">0</b></div>
+      </div>
+      <div id="new-best" class="new-best hidden">NEW PERSONAL BEST</div>
+      <div class="result-actions">
+        <button id="replay-btn" class="big-btn">SKATE AGAIN</button>
+        <button id="menu-btn" class="text-btn">BACK TO MENU</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="rotate-hint">TURN YOUR PHONE SIDEWAYS FOR A WIDER SESSION</div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
