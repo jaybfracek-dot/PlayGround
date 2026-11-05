@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07080b" />
+  <title>PHASE//TWO — MIDI Scratch System</title>
+  <meta name="description" content="A dual-deck browser DJ system with real jog-wheel scratching, Web MIDI, capacitive platter support and MP3 import." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-mobile-view="a">
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></symbol>
+    <symbol id="i-midi" viewBox="0 0 24 24"><path d="M4 7h16v10H4zM7 7v5m5-5v5m5-5v5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7" cy="14.5" r="1.4"/><circle cx="12" cy="14.5" r="1.4"/><circle cx="17" cy="14.5" r="1.4"/></symbol>
+    <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 18h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15 15 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13.5 2 5 13h6l-.5 9L19 10h-6z"/></symbol>
+    <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v6H5a1 1 0 0 1-1-1zm16 0h-3v6h2a1 1 0 0 0 1-1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9.6 9.2a2.5 2.5 0 1 1 4 2c-.9.6-1.6 1.2-1.6 2.3M12 17.2h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <div class="ambient" aria-hidden="true">
+    <span class="ambient-orb orb-a"></span>
+    <span class="ambient-orb orb-b"></span>
+    <span class="ambient-grid"></span>
+  </div>
+
+  <div id="boot" class="boot">
+    <div class="boot-noise"></div>
+    <div class="boot-inner">
+      <div class="boot-copy">
+        <div class="boot-eyebrow"><span class="live-dot"></span> BROWSER DJ SYSTEM / 002</div>
+        <h1>PHASE<span>//</span>TWO</h1>
+        <p class="boot-lede">Two decks. Real jog-wheel physics. Your MIDI controller.</p>
+        <p class="boot-sub">Capacitive platters, relative encoder parsing, MP3 import and sample-accurate scratching — straight in the browser.</p>
+        <div class="boot-actions">
+          <button id="startBtn" class="boot-start" aria-label="Start">Start<span class="boot-start-arrow">↗</span></button>
+          <span class="boot-note">Headphones recommended</span>
+        </div>
+        <div class="boot-specs">
+          <span><b>02</b> DECKS</span>
+          <span><b>16</b> MIDI CH</span>
+          <span><b>∞</b> SCRATCH</span>
+        </div>
+      </div>
+      <div class="boot-art" aria-hidden="true">
+        <div class="boot-disc disc-shadow"></div>
+        <div class="boot-disc disc-back"><span></span></div>
+        <div class="boot-disc disc-front">
+          <div class="boot-grooves"></div>
+          <div class="boot-label">
+            <span class="boot-label-top">PHASE//TWO</span>
+            <span class="boot-label-mid">33⅓</span>
+            <span class="boot-label-bottom">SCRATCH SYSTEM</span>
+          </div>
+          <span class="boot-marker"></span>
+        </div>
+        <div class="boot-tone tone-a"></div>
+        <div class="boot-tone tone-b"></div>
+        <div class="boot-eq">
+          <i style="--h:22%"></i><i style="--h:48%"></i><i style="--h:76%"></i><i style="--h:38%"></i><i style="--h:64%"></i><i style="--h:92%"></i><i style="--h:55%"></i><i style="--h:30%"></i><i style="--h:70%"></i><i style="--h:45%"></i><i style="--h:84%"></i><i style="--h:36%"></i>
+        </div>
+      </div>
+    </div>
+    <div class="boot-footer"><span>WEB AUDIO / WEB MIDI</span><span>NO INSTALL / NO UPLOAD</span><span>BUILT FOR THE CUT</span></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i></span>
+      <span class="brand-word">PHASE<span>//</span>TWO</span>
+      <span class="brand-tag">MIDI SCRATCH SYSTEM</span>
+    </div>
+    <div class="top-meta">
+      <span class="clock" id="clock">--:--</span>
+      <span class="session-bpm">MASTER <b id="masterBpm">124.0</b><small>BPM</small></span>
+    </div>
+    <div class="top-actions">
+      <button id="midiBtn" class="status-chip" aria-haspopup="dialog">
+        <span class="status-led" id="midiLed"></span>
+        <svg><use href="#i-midi"></use></svg>
+        <span id="midiBtnLabel">MIDI</span>
+      </button>
+      <button id="helpBtn" class="icon-btn" aria-label="Help and shortcuts"><svg><use href="#i-help"></use></svg></button>
+    </div>
+  </header>
+
+  <nav class="mobile-tabs" aria-label="Mobile view">
+    <button data-mobile="a" class="active">DECK A</button>
+    <button data-mobile="b">DECK B</button>
+    <button data-mobile="mixer">MIXER</button>
+  </nav>
+
+  <main class="workspace">
+    <article class="deck-card deck-a" data-deck="A" aria-label="Deck A">
+      <header class="deck-head">
+        <span class="deck-letter">A</span>
+        <div class="deck-title-wrap">
+          <h2 id="titleA" class="track-title">Midnight Motion</h2>
+          <p id="artistA" class="track-artist">Kairo Club</p>
+        </div>
+        <div class="deck-readout">
+          <span class="bpm-value" id="bpmA">124.0</span>
+          <span class="bpm-label">BPM</span>
+        </div>
+        <span class="key-pill" id="keyA">A min</span>
+      </header>
+
+      <div class="wave-shell">
+        <canvas id="waveA" class="waveform" aria-label="Deck A waveform"></canvas>
+        <div class="wave-meta">
+          <span id="elapsedA">00:00.0</span>
+          <span class="wave-badge" id="loopBadgeA">NO LOOP</span>
+          <span id="remainingA">-00:31.0</span>
+        </div>
+        <div class="wave-hint">CLICK TO SEEK</div>
+      </div>
+
+      <div class="deck-body">
+        <div class="platter-col">
+          <div class="platter" id="platterA" role="slider" tabindex="0" aria-label="Deck A platter — drag to scratch" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="platter-ring">
+              <span class="platter-tick t1"></span><span class="platter-tick t2"></span><span class="platter-tick t3"></span><span class="platter-tick t4"></span>
+              <div class="platter-disc" id="discA">
+                <div class="grooves"></div>
+                <div class="disc-label">
+                  <span class="label-top">PHASE//TWO</span>
+                  <span class="label-track" id="labelA">MIDNIGHT<br>MOTION</span>
+                  <span class="label-bottom">33⅓ RPM</span>
+                </div>
+                <span class="disc-marker"></span>
+              </div>
+              <span class="platter-indicator"></span>
+            </div>
+            <div class="platter-touch" id="touchA">CAPACITIVE / DRAG TO SCRATCH</div>
+          </div>
+          <div class="transport">
+            <button class="transport-btn cue-btn" id="cueA" aria-label="Deck A cue">CUE</button>
+            <button class="play-btn" id="playA" aria-label="Play deck A"><svg class="play-icon"><use href="#i-play"></use></svg></button>
+            <button class="transport-btn sync-btn" id="syncA" aria-label="Sync deck A">SYNC</button>
+          </div>
+          <div class="platter-state"><span class="state-dot"></span><span id="platterStateA">READY</span><span id="scratchRateA">0.00×</span></div>
+        </div>
+
+        <div class="deck-controls">
+          <div class="pitch-strip">
+            <div class="pitch-head"><span>PITCH</span><b id="pitchValA">+0.0%</b></div>
+            <div class="pitch-fader-wrap">
+              <span class="pitch-center"></span>
+              <input id="pitchA" class="vrange pitch-range" type="range" min="-8" max="8" step="0.1" value="0" aria-label="Deck A pitch" />
+            </div>
+            <div class="range-buttons" role="group" aria-label="Pitch range">
+              <button data-deck="A" data-range="8" class="active">±8</button>
+              <button data-deck="A" data-range="16">±16</button>
+              <button data-deck="A" data-range="50">±50</button>
+            </div>
+          </div>
+
+          <div class="knob-bank">
+            <div class="knob" data-deck="A" data-param="high" data-min="-12" data-max="12" data-value="0" role="slider" tabindex="0" aria-label="Deck A high EQ" aria-valuemin="-12" aria-valuemax="12" aria-valuenow="0">
+              <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+              <span class="knob-name">HI</span><span class="knob-read">0.0</span>
+            </div>
+            <div class="knob" data-deck="A" data-param="mid" data-min="-12" data-max="12" data-value="0" role="slider" tabindex="0" aria-label="Deck A mid EQ" aria-valuemin="-12" aria-valuemax="12" aria-valuenow="0">
+              <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+              <span class="knob-name">MID</span><span class="knob-read">0.0</span>
+            </div>
+            <div class="knob" data-deck="A" data-param="low" data-min="-12" data-max="12" data-value="0" role="slider" tabindex="0" aria-label="Deck A low EQ" aria-valuemin="-12" aria-valuemax="12" aria-valuenow="0">
+              <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+              <span class="knob-name">LOW</span><span class="knob-read">0.0</span>
+            </div>
+            <div class="knob" data-deck="A" data-param="filter" data-min="-1" data-max="1" data-value="0" role="slider" tabindex="0" aria-label="Deck A filter" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0">
+              <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+              <span class="knob-name">FILTER</span><span class="knob-read">OFF</span>
+            </div>
+          </div>
+
+          <div class="pads" id="padsA" aria-label="Deck A performance pads">
+            <button class="pad cue-pad" data-deck="A" data-pad="hot" data-index="0"><span class="pad-key">1</span><span class="pad-label">CUE 1</span><span class="pad-time">EMPTY</span></button>
+            <button class="pad cue-pad" data-deck="A" data-pad="hot" data-index="1"><span class="pad-key">2</span><span class="pad-label">CUE 2</span><span class="pad-time">EMPTY</span></button>
+            <button class="pad cue-pad" data-deck="A" data-pad="hot" data-index="2"><span class="pad-key">3</span><span class="pad-label">CUE 3</span><span class="pad-time">EMPTY</span></button>
+            <button class="pad cue-pad" data-deck="A" data-pad="hot" data-index="3"><span class="pad-key">4</span><span class="pad-label">CUE 4</span><span class="pad-time">EMPTY</span></button>
+            <button class="pad loop-pad" data-deck="A" data-pad="loop" data-beats="0.25"><span class="pad-key">Q</span><span class="pad-label">1/4</span><span class="pad-time">BEAT</span></button>
+            <button class="pad loop-pad" data-deck="A" data-pad="loop" data-beats="0.5"><span class="pad-key">W</span><span class="pad-label">1/2</span><span class="pad-time">BEAT</span></button>
+            <button class="pad loop-pad" data-deck="A" data-pad="loop" data-beats="1"><span class="pad-key">E</span><span class="pad-label">1</span><span class="pad-time">BEAT</span></button>
+            <button class="pad loop-pad" data-deck="A" data-pad="loop" data-beats="4"><span class="pad-key">R</span><span class="pad-label">1</span><span class="pad-time">BAR</span></button>
+          </div>
+
+          <div class="fx-row">
+            <button class="fx-toggle" id="echoA" data-deck="A">ECHO <span class="fx-led"></span></button>
+            <div class="level-meter deck-meter" aria-hidden="true"><i id="meterA"></i></div>
+            <span class="fx-caption">POST-FADER FX</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <section class="mixer-card" aria-label="Mixer">
+      <header class="mixer-head">
+        <div>
+          <span class="mixer-kicker">CENTER</span>
+          <h2>MIXER</h2>
+        </div>
+        <span class="mixer-format">2 CH / 48K</span>
+      </header>
+
+      <div class="master-block">
+        <div class="master-label"><span>MASTER</span><b id="masterDb">-∞</b><small>dB</small></div>
+        <div class="master-meter" aria-hidden="true">
+          <div class="meter-scale"><span>0</span><span>-6</span><span>-12</span><span>-24</span></div>
+          <div class="master-bars"><i id="masterL"></i><i id="masterR"></i></div>
+        </div>
+        <div class="master-knob-row">
+          <div class="knob small" data-master="master" data-min="0" data-max="1" data-value="0.86" role="slider" tabindex="0" aria-label="Master volume" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0.86">
+            <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+            <span class="knob-name">MASTER</span><span class="knob-read">86</span>
+          </div>
+          <button id="masterSync" class="sync-all" title="Sync deck B to deck A">SYNC ALL</button>
+        </div>
+      </div>
+
+      <div class="channel-strips">
+        <div class="channel-strip" data-channel="A">
+          <div class="chan-head"><span class="chan-letter a">A</span><span id="chanBpmA">124.0</span></div>
+          <div class="chan-fader-wrap">
+            <div class="chan-meter"><i id="chanMeterA"></i></div>
+            <input id="volA" class="vrange chan-range" type="range" min="0" max="1" step="0.01" value="0.82" aria-label="Deck A channel volume" />
+          </div>
+          <div class="chan-foot"><span>LEVEL</span><b id="volValA">82</b></div>
+        </div>
+        <div class="channel-strip" data-channel="B">
+          <div class="chan-head"><span class="chan-letter b">B</span><span id="chanBpmB">94.0</span></div>
+          <div class="chan-fader-wrap">
+            <div class="chan-meter"><i id="chanMeterB"></i></div>
+            <input id="volB" class="vrange chan-range" type="range" min="0" max="1" step="0.01" value="0.82" aria-label="Deck B channel volume" />
+          </div>
+          <div class="chan-foot"><span>LEVEL</span><b id="volValB">82</b></div>
+        </div>
+      </div>
+
+      <div class="crossfader-block">
+        <div class="cross-head"><span>A</span><span>CROSSFADER</span><span>B</span></div>
+        <input id="crossfader" class="hrange" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Crossfader" />
+        <div class="cross-marks"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+
+      <div class="mixer-bottom">
+        <div class="mixer-stat"><span>SESSION</span><b id="sessionState">STANDBY</b></div>
+        <div class="mixer-stat"><span>PLATTER MAP</span><b id="mixerPlatter">TOUCH</b></div>
+        <div class="mixer-stat"><span>MIDI IN</span><b id="mixerMidi">NONE</b></div>
+      </div>
+
+      <button id="openMidi" class="mixer-midi-btn"><svg><use href="#i-midi"></use></svg> OPEN MIDI CONTROL</button>
+    </section>
+
+    <article class="deck-card deck-b" data-deck="B" aria-label="Deck B">
+      <header class="deck-head">
+        <span class="deck-letter b">B</span>
+        <div class="deck-title-wrap">
+          <h2 id="titleB" class="track-title">Velvet Static</h2>
+          <p id="artistB" class="track-artist">Mono/Chrome</p>
+        </div>
+        <div class="deck-readout">
+          <span class="bpm-value" id="bpmB">94.0</span>
+          <span class="bpm-label">BPM</span>
+        </div>
+        <span class="key-pill" id="keyB">D min</span>
+      </header>
+
+      <div class="wave-shell">
+        <canvas id="waveB" class="waveform" aria-label="Deck B waveform"></canvas>
+        <div class="wave-meta">
+          <span id="elapsedB">00:00.0</span>
+          <span class="wave-badge" id="loopBadgeB">NO LOOP</span>
+          <span id="remainingB">-00:30.6</span>
+        </div>
+        <div class="wave-hint">CLICK TO SEEK</div>
+      </div>
+
+      <div class="deck-body">
+        <div class="platter-col">
+          <div class="platter" id="platterB" role="slider" tabindex="0" aria-label="Deck B platter — drag to scratch" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="platter-ring">
+              <span class="platter-tick t1"></span><span class="platter-tick t2"></span><span class="platter-tick t3"></span><span class="platter-tick t4"></span>
+              <div class="platter-disc" id="discB">
+                <div class="grooves"></div>
+                <div class="disc-label">
+                  <span class="label-top">PHASE//TWO</span>
+                  <span class="label-track" id="labelB">VELVET<br>STATIC</span>
+                  <span class="label-bottom">33⅓ RPM</span>
+                </div>
+                <span class="disc-marker"></span>
+              </div>
+              <span class="platter-indicator"></span>
+            </div>
+            <div class="platter-touch" id="touchB">CAPACITIVE / DRAG TO SCRATCH</div>
+          </div>
+          <div class="transport">
+            <button class="transport-btn cue-btn" id="cueB" aria-label="Deck B cue">CUE</button>
+            <button class="play-btn" id="playB" aria-label="Play deck B"><svg class="play-icon"><use href="#i-play"></use></svg></button>
+            <button class="transport-btn sync-btn" id="syncB" aria-label="Sync deck B">SYNC</button>
+          </div>
+          <div class="platter-state"><span class="state-dot"></span><span id="platterStateB">READY</span><span id="scratchRateB">0.00×</span></div>
+        </div>
+
+        <div class="deck-controls">
+          <div class="pitch-strip">
+            <div class="pitch-head"><span>PITCH</span><b id="pitchValB">+0.0%</b></div>
+            <div class="pitch-fader-wrap">
+              <span class="pitch-center"></span>
+              <input id="pitchB" class="vrange pitch-range" type="range" min="-8" max="8" step="0.1" value="0" aria-label="Deck B pitch" />
+            </div>
+            <div class="range-buttons" role="group" aria-label="Pitch range">
+              <button data-deck="B" data-range="8" class="active">±8</button>
+              <button data-deck="B" data-range="16">±16</button>
+              <button data-deck="B" data-range="50">±50</button>
+            </div>
+          </div>
+
+          <div class="knob-bank">
+            <div class="knob" data-deck="B" data-param="high" data-min="-12" data-max="12" data-value="0" role="slider" tabindex="0" aria-label="Deck B high EQ" aria-valuemin="-12" aria-valuemax="12" aria-valuenow="0">
+              <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+              <span class="knob-name">HI</span><span class="knob-read">0.0</span>
+            </div>
+            <div class="knob" data-deck="B" data-param="mid" data-min="-12" data-max="12" data-value="0" role="slider" tabindex="0" aria-label="Deck B mid EQ" aria-valuemin="-12" aria-valuemax="12" aria-valuenow="0">
+              <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+              <span class="knob-name">MID</span><span class="knob-read">0.0</span>
+            </div>
+            <div class="knob" data-deck="B" data-param="low" data-min="-12" data-max="12" data-value="0" role="slider" tabindex="0" aria-label="Deck B low EQ" aria-valuemin="-12" aria-valuemax="12" aria-valuenow="0">
+              <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+              <span class="knob-name">LOW</span><span class="knob-read">0.0</span>
+            </div>
+            <div class="knob" data-deck="B" data-param="filter" data-min="-1" data-max="1" data-value="0" role="slider" tabindex="0" aria-label="Deck B filter" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0">
+              <div class="knob-dial"><span class="knob-pointer"></span><span class="knob-center"></span></div>
+              <span class="knob-name">FILTER</span><span class="knob-read">OFF</span>
+            </div>
+          </div>
+
+          <div class="pads" id="padsB" aria-label="Deck B performance pads">
+            <button class="pad cue-pad" data-deck="B" data-pad="hot" data-index="0"><span class="pad-key">7</span><span class="pad-label">CUE 1</span><span class="pad-time">EMPTY</span></button>
+            <button class="pad cue-pad" data-deck="B" data-pad="hot" data-index="1"><span class="pad-key">8</span><span class="pad-label">CUE 2</span><span class="pad-time">EMPTY</span></button>
+            <button class="pad cue-pad" data-deck="B" data-pad="hot" data-index="2"><span class="pad-key">9</span><span class="pad-label">CUE 3</span><span class="pad-time">EMPTY</span></button>
+            <button class="pad cue-pad" data-deck="B" data-pad="hot" data-index="3"><span class="pad-key">0</span><span class="pad-label">CUE 4</span><span class="pad-time">EMPTY</span></button>
+            <button class="pad loop-pad" data-deck="B" data-pad="loop" data-beats="0.25"><span class="pad-key">U</span><span class="pad-label">1/4</span><span class="pad-time">BEAT</span></button>
+            <button class="pad loop-pad" data-deck="B" data-pad="loop" data-beats="0.5"><span class="pad-key">I</span><span class="pad-label">1/2</span><span class="pad-time">BEAT</span></button>
+            <button class="pad loop-pad" data-deck="B" data-pad="loop" data-beats="1"><span class="pad-key">O</span><span class="pad-label">1</span><span class="pad-time">BEAT</span></button>
+            <button class="pad loop-pad" data-deck="B" data-pad="loop" data-beats="4"><span class="pad-key">P</span><span class="pad-label">1</span><span class="pad-time">BAR</span></button>
+          </div>
+
+          <div class="fx-row">
+            <button class="fx-toggle" id="echoB" data-deck="B">ECHO <span class="fx-led"></span></button>
+            <div class="level-meter deck-meter" aria-hidden="true"><i id="meterB"></i></div>
+            <span class="fx-caption">POST-FADER FX</span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <section class="library-card" aria-label="Music library">
+    <header class="library-head">
+      <div class="library-title"><span class="library-kicker">SESSION</span><h2>LIBRARY</h2></div>
+      <label class="search-box">
+        <svg><use href="#i-search"></use></svg>
+        <input id="searchInput" type="search" placeholder="Search tracks, artists, keys" autocomplete="off" />
+      </label>
+      <div class="library-actions">
+        <span class="library-count" id="libraryCount">04 TRACKS</span>
+        <button id="importBtn" class="import-btn"><svg><use href="#i-import"></use></svg> IMPORT MP3</button>
+        <input id="fileInput" type="file" accept="audio/mpeg,audio/mp3,audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac" multiple hidden />
+      </div>
+    </header>
+    <div class="track-list" id="trackList" role="list"></div>
+    <div class="library-foot">
+      <span class="drop-hint">DROP MP3 / WAV / M4A ANYWHERE</span>
+      <span class="library-note">Decoded locally with Web Audio · nothing is uploaded</span>
+    </div>
+  </section>
+
+  <footer class="statusbar">
+    <div class="status-left">
+      <span class="status-item"><span class="tiny-led" id="audioLed"></span><span id="audioStatus">AUDIO OFFLINE</span></span>
+      <span class="status-item">44.1 kHz / 32-bit float</span>
+      <span class="status-item" id="latencyStatus">LATENCY —</span>
+    </div>
+    <div class="status-right">
+      <span class="status-item" id="midiDeviceStatus">NO MIDI DEVICE</span>
+      <span class="status-item kbd-hint"><kbd>SPACE</kbd> A <kbd>ENTER</kbd> B <kbd>H</kbd> HELP</span>
+    </div>
+  </footer>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+  <div class="drop-overlay" id="dropOverlay">
+    <div class="drop-card"><span class="drop-icon">↓</span><strong>DROP TO DECODE</strong><span>MP3 · WAV · M4A · OGG</span></div>
+  </div>
+
+  <div class="drawer-scrim" id="drawerScrim"></div>
+  <aside class="midi-drawer" id="midiDrawer" role="dialog" aria-modal="true" aria-labelledby="midiDrawerTitle">
+    <header class="drawer-head">
+      <div>
+        <span class="drawer-kicker">HARDWARE</span>
+        <h2 id="midiDrawerTitle">MIDI CONTROL</h2>
+      </div>
+      <button id="closeMidi" class="icon-btn" aria-label="Close MIDI panel"><svg><use href="#i-close"></use></svg></button>
+    </header>
+
+    <div class="drawer-scroll">
+      <section class="drawer-section">
+        <div class="section-title"><span>01</span><h3>CONNECTION</h3><b id="midiAccessState">OFFLINE</b></div>
+        <div class="connect-row">
+          <button id="enableMidi" class="wide-btn"><span class="status-led"></span> ENABLE WEB MIDI</button>
+          <button id="refreshMidi" class="square-btn" aria-label="Refresh MIDI devices">↻</button>
+        </div>
+        <label class="field-label" for="midiInput">INPUT DEVICE</label>
+        <div class="select-wrap">
+          <select id="midiInput"><option value="">No device selected</option></select>
+          <svg><use href="#i-chevron"></use></svg>
+        </div>
+        <p class="microcopy" id="midiHelpText">Chrome / Edge on desktop expose Web MIDI. Connect a controller over USB, then enable access.</p>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-title"><span>02</span><h3>PLATTER ENGINE</h3><b id="platterModeBadge">TOUCH</b></div>
+        <div class="segmented" id="sensorMode" role="group" aria-label="Platter sensor type">
+          <button data-sensor="touch" class="active">CAPACITIVE TOUCH</button>
+          <button data-sensor="velocity">NON-TOUCH</button>
+        </div>
+        <p class="microcopy" id="sensorHelp">Touch-sensitive platters use a note/CC touch sensor. Touching freezes audio; rotation becomes scratch speed. Releasing resumes transport.</p>
+
+        <label class="field-label" for="relativeMode">RELATIVE ENCODER PROTOCOL</label>
+        <div class="select-wrap">
+          <select id="relativeMode">
+            <option value="twos">2's complement (1..63 / 65..127)</option>
+            <option value="signed">Signed bit (0..63 / 64..127)</option>
+            <option value="signmag">Sign + magnitude</option>
+            <option value="absolute">Absolute 7-bit (wrap delta)</option>
+            <option value="absolute14">Absolute 14-bit (MSB/LSB)</option>
+          </select>
+          <svg><use href="#i-chevron"></use></svg>
+        </div>
+        <div class="inline-fields">
+          <label class="mini-field"><span>TICKS / REV</span><input id="ticksPerRev" type="number" min="32" max="8192" step="1" value="720" /></label>
+          <label class="mini-field"><span>SCRATCH FEEL</span><input id="scratchSens" type="range" min="0.5" max="2" step="0.05" value="1" /></label>
+          <span class="mini-value" id="scratchSensVal">1.00×</span>
+        </div>
+
+        <div class="mapping-grid">
+          <div class="mapping-row"><span class="map-name">Deck A jog</span><button class="learn-btn" data-learn="deckA.jog"><span>CC</span><b id="mapDeckAjog">LEARN</b></button></div>
+          <div class="mapping-row"><span class="map-name">Deck A touch</span><button class="learn-btn" data-learn="deckA.touch"><span>NOTE/CC</span><b id="mapDeckAtouch">LEARN</b></button></div>
+          <div class="mapping-row"><span class="map-name">Deck B jog</span><button class="learn-btn" data-learn="deckB.jog"><span>CC</span><b id="mapDeckBjog">LEARN</b></button></div>
+          <div class="mapping-row"><span class="map-name">Deck B touch</span><button class="learn-btn" data-learn="deckB.touch"><span>NOTE/CC</span><b id="mapDeckBtouch">LEARN</b></button></div>
+          <div class="mapping-row"><span class="map-name">Play A / B</span><button class="learn-btn" data-learn="deckA.play"><span>NOTE</span><b id="mapDeckAplay">LEARN</b></button><button class="learn-btn slim" data-learn="deckB.play"><span>NOTE</span><b id="mapDeckBplay">LEARN</b></button></div>
+          <div class="mapping-row"><span class="map-name">Cue A / B</span><button class="learn-btn" data-learn="deckA.cue"><span>NOTE</span><b id="mapDeckAcue">LEARN</b></button><button class="learn-btn slim" data-learn="deckB.cue"><span>NOTE</span><b id="mapDeckBcue">LEARN</b></button></div>
+          <div class="mapping-row"><span class="map-name">Crossfader</span><button class="learn-btn" data-learn="master.crossfader"><span>CC</span><b id="mapCrossfader">LEARN</b></button></div>
+          <div class="mapping-row"><span class="map-name">Pitch A / B</span><button class="learn-btn" data-learn="deckA.pitch"><span>CC</span><b id="mapDeckApitch">LEARN</b></button><button class="learn-btn slim" data-learn="deckB.pitch"><span>CC</span><b id="mapDeckBpitch">LEARN</b></button></div>
+        </div>
+        <p class="microcopy">Pick a learn slot, then move one control. Mappings are stored locally per profile. Factory maps are starters — learn the exact CC/note of your hardware in seconds.</p>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-title"><span>03</span><h3>DEVICE PROFILE</h3><b id="profileBadge">GENERIC</b></div>
+        <div class="select-wrap">
+          <select id="profileSelect">
+            <option value="generic">Generic / Learn from scratch</option>
+            <option value="pioneer">Pioneer DDJ starter map</option>
+            <option value="reloop">Reloop Beatpad starter map</option>
+            <option value="numark">Numark Mixtrack starter map</option>
+            <option value="hercules">Hercules Inpulse starter map</option>
+          </select>
+          <svg><use href="#i-chevron"></use></svg>
+        </div>
+        <button id="resetMapping" class="text-btn">RESET PROFILE MAPPINGS</button>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-title"><span>04</span><h3>PARSE MONITOR</h3><b id="monitorCount">0 EVENTS</b></div>
+        <div class="monitor" id="midiMonitor" aria-live="polite">
+          <div class="monitor-empty">Waiting for MIDI input…<br><span>Raw bytes → parsed type → channel → control → mapped action</span></div>
+        </div>
+        <button id="clearMonitor" class="text-btn">CLEAR MONITOR</button>
+      </section>
+
+      <section class="drawer-section demo-section">
+        <div class="section-title"><span>05</span><h3>NO HARDWARE? DEMO IT</h3><b>SIMULATED</b></div>
+        <p class="microcopy">These buttons feed synthetic bytes through the same parser and mapping pipeline as a real controller.</p>
+        <div class="demo-grid">
+          <button id="simTouch" class="demo-btn">TOUCH ON</button>
+          <button id="simRelease" class="demo-btn">RELEASE</button>
+          <button id="simScratchBack" class="demo-btn">◀ SCRATCH</button>
+          <button id="simScratchFwd" class="demo-btn">SCRATCH ▶</button>
+          <button id="simAuto" class="demo-btn accent">AUTO SCRATCH</button>
+          <button id="simStop" class="demo-btn">STOP DEMO</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <div class="modal-scrim" id="helpScrim"></div>
+  <section class="help-modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <header class="help-head">
+      <div><span class="drawer-kicker">FIELD MANUAL</span><h2 id="helpTitle">HOW TO CUT</h2></div>
+      <button id="closeHelp" class="icon-btn" aria-label="Close help"><svg><use href="#i-close"></use></svg></button>
+    </header>
+    <div class="help-grid">
+      <div class="help-card">
+        <span class="help-num">01</span>
+        <h3>SCRATCH THE PLATTER</h3>
+        <p>Drag either on-screen platter with a mouse or finger. The touch layer freezes the transport and the angular velocity becomes playback rate — forward, backward and everything between.</p>
+        <div class="help-diagram"><span>TOUCH</span><i>→</i><span>Δ ANGLE</span><i>→</i><span>RATE</span><i>→</i><span>AUDIO</span></div>
+      </div>
+      <div class="help-card">
+        <span class="help-num">02</span>
+        <h3>CAPACITIVE VS NON-TOUCH</h3>
+        <p>Capacitive platters send a touch note/CC. Touch freezes audio, rotation scratches, release resumes if the deck was playing. Non-touch platters have no sensor: jog rotation is interpreted as bend or scratch depending on transport state and the Vinyl setting.</p>
+      </div>
+      <div class="help-card">
+        <span class="help-num">03</span>
+        <h3>RELATIVE ENCODERS</h3>
+        <p>Jog wheels usually send relative CC deltas. PHASE//TWO decodes 2's complement, signed-bit, sign-magnitude, absolute 7-bit and 14-bit protocols. Each delta is scaled by ticks-per-revolution and mapped to scratch rate.</p>
+      </div>
+      <div class="help-card">
+        <span class="help-num">04</span>
+        <h3>LOAD YOUR MP3s</h3>
+        <p>Click Import MP3 or drop files anywhere. Files are decoded locally with the Web Audio API; ID3 title, artist and BPM tags are read when present. Nothing leaves your machine.</p>
+      </div>
+      <div class="help-card shortcuts-card">
+        <span class="help-num">05</span>
+        <h3>KEYBOARD</h3>
+        <div class="shortcut-list">
+          <span><kbd>SPACE</kbd> Deck A play/pause</span>
+          <span><kbd>ENTER</kbd> Deck B play/pause</span>
+          <span><kbd>Q</kbd><kbd>W</kbd> Scratch A back / fwd</span>
+          <span><kbd>O</kbd><kbd>P</kbd> Scratch B back / fwd</span>
+          <span><kbd>1–4</kbd> Deck A hot cues</span>
+          <span><kbd>7–0</kbd> Deck B hot cues</span>
+          <span><kbd>C</kbd><kbd>V</kbd><kbd>B</kbd> Crossfader L / C / R</span>
+        </div>
+      </div>
+      <div class="help-card">
+        <span class="help-num">06</span>
+        <h3>MIDI IN 60 SECONDS</h3>
+        <p>Open MIDI Control → Enable Web MIDI → select your controller. If the factory map is wrong for your firmware, choose a learn slot and move one control. The monitor shows every raw byte, parsed channel and mapped action.</p>
+        <button id="helpOpenMidi" class="text-btn">OPEN MIDI CONTROL →</button>
+      </div>
+    </div>
+  </section>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
