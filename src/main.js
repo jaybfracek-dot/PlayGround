@@ -677,7 +677,9 @@ function stepGround(dt, acts) {
 
   const currentH = phys.y;
   const nh = heightAt(nx, nz);
-  const maxStep = currentH > 0.45 ? 1.6 : 0.8;
+  // Allow ramps and banks while still treating ledges as solid faces.
+  const travelled = Math.hypot(nx - ox, nz - oz);
+  const maxStep = Math.max(0.06, travelled * 0.75);
   if (nh - currentH > maxStep) {
     // ledge / wall face: don't climb it
     nx = ox;
@@ -851,16 +853,21 @@ function stepAir(dt, acts) {
 function findRail() {
   let best = null;
   let bestD = Infinity;
+  const spd = speedOf();
   for (const rail of world.rails) {
-    if (phys.y < rail.y - 0.35 || phys.y > rail.y + 1.15) continue;
+    // Generous vertical window so a fast frame doesn't tunnel past a rail;
+    // also lets a roll-off from a ledge snap onto its edge.
+    const up = rail.kind === 'coping' ? 1.9 : 1.55;
+    const down = rail.ledge ? 0.62 : 0.45;
+    if (phys.y < rail.y - down || phys.y > rail.y + up) continue;
     const dx = rail.bx - rail.ax, dz = rail.bz - rail.az;
     const len2 = dx * dx + dz * dz;
     let t = ((phys.x - rail.ax) * dx + (phys.z - rail.az) * dz) / len2;
-    if (t < -0.03 || t > 1.03) continue;
+    if (t < -0.04 || t > 1.04) continue;
     t = clamp(t, 0, 1);
     const px = rail.ax + dx * t, pz = rail.az + dz * t;
     const dist = Math.hypot(phys.x - px, phys.z - pz);
-    const maxDist = (rail.width || 0.55) + 0.42;
+    const maxDist = (rail.width || 0.55) + 0.5 + Math.min(0.28, spd * 0.012);
     if (dist < maxDist && dist < bestD) {
       bestD = dist;
       best = { rail, t };
@@ -877,9 +884,13 @@ function enterGrind(found) {
   const sign = (phys.vx * dirx + phys.vz * dirz) >= 0 ? 1 : -1;
   const spd = Math.max(3, speedOf());
 
+  const label = rail.kind === 'coping' ? 'COPING GRIND'
+    : rail.kind === 'bench' ? 'BENCH GRIND'
+    : rail.ledge ? 'LEDGE GRIND' : '50-50 GRIND';
+
   phys.grind = {
     rail, t: found.t, sign, speed: spd, balance: 0, time: 0,
-    dirx, dirz, len,
+    dirx, dirz, len, label,
   };
   phys.grounded = false;
   phys.vy = 0;
@@ -900,12 +911,12 @@ function enterGrind(found) {
   game.bank += Math.round(70 * game.mult);
   game.mult = Math.min(8, Math.round((game.mult + 0.2) * 100) / 100);
   game.comboTimer = game.comboMax;
-  addTrickFeed('50-50 GRIND', 70);
-  if (game.bestTrick.points < 70) game.bestTrick = { name: '50-50 GRIND', points: 70 };
+  addTrickFeed(label, 70);
+  if (game.bestTrick.points < 70) game.bestTrick = { name: label, points: 70 };
   audio.grindStart();
   input.rumble(0.35, 0.2, 90);
   fx.land(phys.x, phys.y, phys.z, 0.8);
-  showToast('LOCKED IN', 'BALANCE WITH THE LEFT STICK', '', 900);
+  showToast(label, 'BALANCE WITH THE LEFT STICK', '', 900);
 }
 
 function stepGrind(dt, acts) {
@@ -968,8 +979,9 @@ function exitGrind() {
   if (!phys.grind) return;
   const gr = phys.grind;
   const rail = gr.rail;
-  phys.x = clamp(phys.x, rail.ax - 0.2, rail.bx + 0.2);
-  phys.z = clamp(phys.z, rail.az - 0.2, rail.bz + 0.2);
+  const t = clamp(gr.t, 0, 1);
+  phys.x = rail.ax + (rail.bx - rail.ax) * t;
+  phys.z = rail.az + (rail.bz - rail.az) * t;
   phys.grind = null;
   phys.grounded = false;
   phys.vy = 2.7;

@@ -9,7 +9,6 @@ import * as THREE from '../vendor/three.module.js';
  * ------------------------------------------------------------------ */
 
 const SKIN = 0xc07c55;
-const SKIN_DARK = 0x9c5f3f;
 const HOODIE = 0xe4511b;
 const HOODIE_DARK = 0xb63b0f;
 const PANTS = 0x272b33;
@@ -82,27 +81,38 @@ function limb(length, rTop, rBot, material, segments = 14) {
   return { group, mesh, length };
 }
 
-function roundedDeckShape(width = 0.44, length = 1.32) {
+function roundedDeckShape(width = 0.32, length = 1.02) {
   const w = width / 2, l = length / 2;
   const s = new THREE.Shape();
-  s.moveTo(-w + 0.02, -l + 0.09);
-  s.quadraticCurveTo(-w, -l + 0.02, -w + 0.075, -l + 0.008);
-  s.lineTo(w - 0.075, -l + 0.008);
-  s.quadraticCurveTo(w, -l + 0.02, w - 0.02, -l + 0.09);
-  s.lineTo(w + 0.01, -0.36);
-  s.quadraticCurveTo(w - 0.006, -0.27, w, -0.20);
-  s.lineTo(w, 0.20);
-  s.quadraticCurveTo(w - 0.006, 0.27, w + 0.01, 0.36);
-  s.lineTo(w - 0.02, l - 0.09);
-  s.quadraticCurveTo(w, l - 0.02, w - 0.075, l - 0.008);
-  s.lineTo(-w + 0.075, l - 0.008);
-  s.quadraticCurveTo(-w, l - 0.02, -w + 0.02, l - 0.09);
-  s.lineTo(-w - 0.01, 0.36);
-  s.quadraticCurveTo(-w + 0.006, 0.27, -w, 0.20);
-  s.lineTo(-w, -0.20);
-  s.quadraticCurveTo(-w + 0.006, -0.27, -w - 0.01, -0.36);
+  const shoulder = l * 0.76;
+  s.moveTo(-w + 0.012, -l);
+  s.quadraticCurveTo(-w - 0.006, -l + 0.012, -w, -shoulder);
+  s.lineTo(-w, shoulder);
+  s.quadraticCurveTo(-w, l - 0.012, -w + 0.012, l);
+  s.quadraticCurveTo(0, l + 0.045, w - 0.012, l);
+  s.quadraticCurveTo(w, l - 0.012, w, shoulder);
+  s.lineTo(w, -shoulder);
+  s.quadraticCurveTo(w, -l + 0.012, w - 0.012, -l);
+  s.quadraticCurveTo(0, -l - 0.045, -w + 0.012, -l);
   s.closePath();
   return s;
+}
+
+/* Bend a flat deck mesh into a real skateboard: concave through the
+ * middle and kicked nose/tail. Works for the deck and the grip sheet. */
+function bendDeckGeometry(geo, halfWidth, halfLength, rise = 0.095, concave = 0.011) {
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const z = pos.getZ(i);
+    const t = Math.max(0, (Math.abs(z) - halfLength * 0.53) / (halfLength * 0.47));
+    const kick = t * t * rise;
+    const bowl = -Math.pow(Math.min(1, Math.abs(x) / halfWidth), 2) * concave;
+    pos.setY(i, pos.getY(i) + kick + bowl);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+  return geo;
 }
 
 function deckGraphic() {
@@ -158,7 +168,7 @@ export class Skater {
     this.group.add(this.tilt);
 
     this.boardGroup = new THREE.Group();
-    this.boardGroup.position.y = 0.105;
+    this.boardGroup.position.y = 0.122;
     this.tilt.add(this.boardGroup);
 
     this.body = new THREE.Group();
@@ -184,50 +194,47 @@ export class Skater {
 
   _buildBoard() {
     const g = this.boardGroup;
+    const halfLen = 0.47;
+    const halfW = 0.15;
 
-    const deckShape = roundedDeckShape(0.46, 1.32);
+    const deckShape = roundedDeckShape(0.30, 0.94);
     const deckGeo = new THREE.ExtrudeGeometry(deckShape, {
-      depth: 0.03, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.012,
-      bevelSegments: 3, curveSegments: 10,
+      depth: 0.02, bevelEnabled: true, bevelSize: 0.008, bevelThickness: 0.008,
+      bevelSegments: 3, curveSegments: 14,
     });
     deckGeo.rotateX(-Math.PI / 2);
-    const deckMat = mat(DECK, { roughness: 0.55, metalness: 0.05 });
+    bendDeckGeometry(deckGeo, halfW, halfLen);
+    const deckMat = mat(DECK, { roughness: 0.5, metalness: 0.04 });
     const deck = new THREE.Mesh(deckGeo, deckMat);
     g.add(deck);
 
-    // grip tape top
-    const gripGeo = new THREE.ShapeGeometry(roundedDeckShape(0.43, 1.26), 10);
+    // grip tape, bent to follow the concave + kicks
+    const gripGeo = new THREE.ShapeGeometry(roundedDeckShape(0.275, 0.88), 14);
     gripGeo.rotateX(-Math.PI / 2);
+    bendDeckGeometry(gripGeo, 0.1375, 0.44, 0.089, 0.010);
     const grip = new THREE.Mesh(gripGeo, new THREE.MeshStandardMaterial({
       color: 0x8b8b8b, map: gripTexture(), roughness: 1, metalness: 0,
     }));
-    grip.position.y = 0.044;
+    grip.position.y = 0.033;
     g.add(grip);
 
     // underside graphic
-    const bottomGeo = new THREE.PlaneGeometry(0.35, 0.98);
+    const bottomGeo = new THREE.PlaneGeometry(0.22, 0.64);
     bottomGeo.rotateX(Math.PI / 2);
+    bendDeckGeometry(bottomGeo, 0.11, 0.32, 0.02, 0.006);
     const bottom = new THREE.Mesh(bottomGeo, new THREE.MeshStandardMaterial({
       map: deckGraphic(), roughness: 0.62, metalness: 0.03, side: THREE.DoubleSide,
     }));
-    bottom.position.y = -0.014;
+    bottom.position.y = -0.017;
     g.add(bottom);
 
-    // nose / tail kick
-    for (const side of [-1, 1]) {
-      const kick = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.02, 0.22), deckMat);
-      kick.position.set(0, 0.052, side * 0.57);
-      kick.rotation.x = side * 0.20;
-      g.add(kick);
-    }
-
     // deck bolts
-    const boltGeo = new THREE.CylinderGeometry(0.009, 0.009, 0.006, 6);
+    const boltGeo = new THREE.CylinderGeometry(0.007, 0.007, 0.005, 6);
     const boltMat = mat(0xc9c9c9, { metalness: 0.9, roughness: 0.3 });
-    for (const z of [-0.42, 0.42]) {
-      for (const x of [-0.155, 0.155]) {
+    for (const z of [-0.275, 0.275]) {
+      for (const x of [-0.09, 0.09]) {
         const bolt = new THREE.Mesh(boltGeo, boltMat);
-        bolt.position.set(x, 0.046, z);
+        bolt.position.set(x, 0.034, z);
         g.add(bolt);
       }
     }
@@ -235,44 +242,44 @@ export class Skater {
     // trucks
     const truckMetal = mat(METAL, { metalness: 0.92, roughness: 0.24 });
     const truckDark = mat(METAL_DARK, { metalness: 0.75, roughness: 0.4 });
-    for (const z of [-0.41, 0.41]) {
+    for (const z of [-0.275, 0.275]) {
       const truck = new THREE.Group();
-      const base = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.018, 0.13), truckDark);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.016, 0.10), truckDark);
       base.position.y = -0.012;
       truck.add(base);
-      const hanger = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.032, 0.075), truckMetal);
-      hanger.position.y = -0.037;
+      const hanger = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.026, 0.055), truckMetal);
+      hanger.position.y = -0.036;
       truck.add(hanger);
-      const kingpin = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.055, 8), truckDark);
-      kingpin.position.y = -0.028;
+      const kingpin = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.046, 8), truckDark);
+      kingpin.position.y = -0.027;
       truck.add(kingpin);
-      const bushing = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.016, 10), mat(0xd9b23f, { roughness: 0.7 }));
-      bushing.position.y = -0.046;
+      const bushing = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.020, 0.013, 10), mat(0xd9b23f, { roughness: 0.7 }));
+      bushing.position.y = -0.043;
       truck.add(bushing);
-      const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.55, 8), truckMetal);
+      const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.40, 8), truckMetal);
       axle.rotation.z = Math.PI / 2;
-      axle.position.y = -0.052;
+      axle.position.y = -0.062;
       truck.add(axle);
       truck.position.z = z;
       g.add(truck);
     }
 
-    // wheels
+    // wheels (54 mm feel, tucked under the deck)
     this.wheels = [];
-    const wheelGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.052, 16);
+    const wheelGeo = new THREE.CylinderGeometry(0.040, 0.040, 0.044, 18);
     wheelGeo.rotateZ(Math.PI / 2);
-    const hubGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.056, 10);
+    const hubGeo = new THREE.CylinderGeometry(0.014, 0.014, 0.047, 10);
     hubGeo.rotateZ(Math.PI / 2);
     const wheelMat = mat(WHEEL, { roughness: 0.5 });
     const hubMat = mat(0x7d7870, { metalness: 0.55, roughness: 0.35 });
-    for (const z of [-0.41, 0.41]) {
-      for (const x of [-0.225, 0.225]) {
+    for (const z of [-0.275, 0.275]) {
+      for (const x of [-0.139, 0.139]) {
         const w = new THREE.Mesh(wheelGeo, wheelMat);
-        w.position.set(x, -0.06, z);
+        w.position.set(x, -0.082, z);
         g.add(w);
         this.wheels.push(w);
         const hub = new THREE.Mesh(hubGeo, hubMat);
-        hub.position.set(x, -0.06, z);
+        hub.position.set(x, -0.082, z);
         g.add(hub);
       }
     }
@@ -289,7 +296,6 @@ export class Skater {
     const hoodie = mat(HOODIE, { roughness: 0.92, map: fabric });
     const hoodieDark = mat(HOODIE_DARK, { roughness: 0.94, map: fabric });
     const skin = mat(SKIN, { roughness: 0.68 });
-    const skinDark = mat(SKIN_DARK, { roughness: 0.75 });
     const shoe = mat(SHOE, { roughness: 0.72 });
     const shoeSole = mat(SHOE_SOLE, { roughness: 0.9 });
     const shoeDark = mat(SHOE_DARK, { roughness: 0.85 });
@@ -466,17 +472,18 @@ export class Skater {
     this.legs = [];
     for (const side of [-1, 1]) {
       const hip = new THREE.Group();
-      hip.position.set(side * 0.135, 0.96, side * 0.235);
+      const homeZ = side > 0 ? 0.225 : -0.255;
+      hip.position.set(side * 0.105, 0.95, homeZ);
 
       const upper = limb(0.4, 0.108, 0.083, pants);
-      upper.group.rotation.x = -0.12;
+      upper.group.rotation.x = -0.20;
       hip.add(upper.group);
 
       const knee = new THREE.Group();
       knee.position.y = -0.4;
       upper.group.add(knee);
       const lower = limb(0.38, 0.08, 0.058, pants);
-      lower.group.rotation.x = 0.28;
+      lower.group.rotation.x = 0.36;
       knee.add(lower.group);
 
       const ankle = new THREE.Group();
@@ -522,9 +529,10 @@ export class Skater {
       shoeGroup.add(heelTab);
       ankle.add(shoeGroup);
       shoeGroup.position.y = 0.0;
+      shoeGroup.rotation.y = side > 0 ? 0.28 : -0.16;
 
       b.add(hip);
-      this.legs.push({ hip, upper, knee, lower, ankle, shoe: shoeGroup, side });
+      this.legs.push({ hip, upper, knee, lower, ankle, shoe: shoeGroup, side, homeZ });
     }
 
     /* ---- arms ---- */
@@ -605,7 +613,7 @@ export class Skater {
     this.activeTrick = null;
     this.trickT = 0;
     this.boardGroup.rotation.set(0, 0, 0);
-    this.boardGroup.position.y = 0.105;
+    this.boardGroup.position.y = 0.122;
   }
 
   show() { this.group.visible = true; }
@@ -619,10 +627,11 @@ export class Skater {
     this.body.position.y = 0;
     this.head.rotation.set(0, 0, 0);
     this.legs.forEach(l => {
-      l.hip.position.y = 0.96;
-      l.upper.group.rotation.x = -0.12;
-      l.lower.group.rotation.x = 0.28;
-      l.ankle.rotation.x = 0;
+      l.hip.position.y = 0.95;
+      l.hip.position.z = l.homeZ;
+      l.upper.group.rotation.x = -0.20;
+      l.lower.group.rotation.x = 0.36;
+      l.ankle.rotation.x = -0.16;
     });
     this.arms.forEach(a => {
       a.shoulder.rotation.set(0, 0, a.side * 0.15);
@@ -680,25 +689,25 @@ export class Skater {
     }
 
     // body crouch + air pose
-    const bodyBase = 0.96 - crouch * 0.16 - charging * 0.06 - (manual ? 0.02 : 0);
-    const swing = Math.sin(this.bob) * 0.015 * Math.min(1, speed / 4);
+    const bodyBase = 0.95 - crouch * 0.16 - charging * 0.03 - (manual ? 0.025 : 0);
+    const swing = Math.sin(this.bob) * 0.012 * Math.min(1, speed / 4);
     this.body.position.y = swing - air * 0.03;
 
     for (const leg of this.legs) {
       const back = leg.side > 0 ? 1 : -1;
       const stance = back * 0.16;
       leg.hip.position.y = bodyBase;
-      leg.hip.position.z = leg.side * 0.235 + (manual ? 0.035 : 0);
-      let upperX = -0.18 + crouch * 0.62 + air * 0.55 + (grab ? 0.35 : 0) + stance * 0.5;
-      let lowerX = 0.34 + crouch * 0.82 + air * 0.85 + (grab ? 0.6 : 0) - stance * 0.2;
-      if (grind) { upperX += 0.08; lowerX += 0.25; }
+      leg.hip.position.z = leg.homeZ + (manual ? 0.035 : 0);
+      let upperX = -0.20 + crouch * 0.36 + air * 0.55 + (grab ? 0.35 : 0) + stance * 0.5;
+      let lowerX = 0.36 + crouch * 0.52 + air * 0.75 + (grab ? 0.6 : 0) - stance * 0.2;
+      if (grind) { upperX += 0.06; lowerX += 0.18; }
       if (manual) { upperX += -0.12; lowerX -= 0.2; }
       leg.upper.group.rotation.x += (upperX - leg.upper.group.rotation.x) * Math.min(1, dt * 14);
       leg.lower.group.rotation.x += (lowerX - leg.lower.group.rotation.x) * Math.min(1, dt * 14);
-      leg.hip.rotation.z = leg.side * (0.04 + crouch * 0.07);
-      leg.knee.rotation.z = leg.side * 0.04;
-      // keep the shoes flat on the deck
-      leg.ankle.rotation.x += (-(leg.upper.group.rotation.x + leg.lower.group.rotation.x) * 0.72 - leg.ankle.rotation.x) * Math.min(1, dt * 12);
+      leg.hip.rotation.z = leg.side * (0.025 + crouch * 0.05);
+      leg.knee.rotation.z = leg.side * 0.03;
+      // keep the soles flat on the deck
+      leg.ankle.rotation.x += (-(leg.upper.group.rotation.x + leg.lower.group.rotation.x) - leg.ankle.rotation.x) * Math.min(1, dt * 12);
     }
 
     for (const arm of this.arms) {
@@ -734,22 +743,22 @@ export class Skater {
       this.boardGroup.rotation.z = THREE.MathUtils.degToRad(d.roll || 0) * e;
       this.boardGroup.rotation.y = THREE.MathUtils.degToRad(d.yaw || 0) * e;
       this.boardGroup.rotation.x = THREE.MathUtils.degToRad(d.pitch || 0) * e;
-      this.boardGroup.position.y = 0.105 + Math.sin(p * Math.PI) * (d.pop || 0.1);
+      this.boardGroup.position.y = 0.122 + Math.sin(p * Math.PI) * (d.pop || 0.1);
       if (p >= 1) {
         this.boardGroup.rotation.set(0, 0, 0);
-        this.boardGroup.position.y = 0.105;
+        this.boardGroup.position.y = 0.122;
         this.activeTrick = null;
       }
     } else if (manual) {
       this.boardGroup.rotation.x += (-0.3 - this.boardGroup.rotation.x) * Math.min(1, dt * 8);
       this.boardGroup.rotation.y += (0 - this.boardGroup.rotation.y) * Math.min(1, dt * 8);
       this.boardGroup.rotation.z += (0 - this.boardGroup.rotation.z) * Math.min(1, dt * 8);
-      this.boardGroup.position.y += (0.13 - this.boardGroup.position.y) * Math.min(1, dt * 8);
+      this.boardGroup.position.y += (0.147 - this.boardGroup.position.y) * Math.min(1, dt * 8);
     } else {
       this.boardGroup.rotation.x += (0 - this.boardGroup.rotation.x) * Math.min(1, dt * 10);
       this.boardGroup.rotation.y += (0 - this.boardGroup.rotation.y) * Math.min(1, dt * 10);
       this.boardGroup.rotation.z += (0 - this.boardGroup.rotation.z) * Math.min(1, dt * 10);
-      this.boardGroup.position.y += (0.105 - this.boardGroup.position.y) * Math.min(1, dt * 10);
+      this.boardGroup.position.y += (0.122 - this.boardGroup.position.y) * Math.min(1, dt * 10);
     }
 
     // wheel spin

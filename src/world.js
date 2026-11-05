@@ -35,6 +35,22 @@ const quarter = [
 
 const funbox = { x: -1, z: 3, halfX: 8, halfZ: 2.6, h: 1.25, bank: 3.0 };
 
+/* Raised slabs that are both solid (height field) and grindable on every
+ * edge. Keeping the collision data here means the visual boxes and the
+ * physics always agree. */
+const ledgeDefs = [
+  { x: 18, z: 17, w: 10, d: 1.2, h: 0.62, rot: 0 },
+  { x: -19, z: 9, w: 7.5, d: 1.1, h: 0.55, rot: 0.08 },
+];
+
+// Bench top — visual is built in buildProps, collision/grind lives here.
+const benchDef = { x: 28, z: 18.5, w: 3.4, d: 0.7, h: 0.49, rot: -0.25 };
+
+const surfaces = [
+  ...ledgeDefs.map(l => ({ ...l, h: l.h + 0.0375 })), // metal cap sits on the slab
+  benchDef,
+];
+
 const kickers = [
   { x1: 14, x2: 20, zBase: 1.5, zLip: -4.0, h: 1.65 },
   { x1: -22.75, x2: -17.25, zBase: -10.5, zLip: -5.0, h: 1.5, flip: true },
@@ -50,6 +66,15 @@ export function heightAt(x, z) {
   if (fdx <= funbox.halfX && fdz <= funbox.halfZ + funbox.bank) {
     if (fdz <= funbox.halfZ) h = Math.max(h, funbox.h);
     else h = Math.max(h, funbox.h * smooth(1 - (fdz - funbox.halfZ) / funbox.bank));
+  }
+
+  // solid ledges / bench tops (also grindable along their edges)
+  for (const s of surfaces) {
+    const c = Math.cos(s.rot), sn = Math.sin(s.rot);
+    const dx = x - s.x, dz = z - s.z;
+    const lx = dx * c - dz * sn;
+    const lz = dx * sn + dz * c;
+    if (Math.abs(lx) <= s.w / 2 && Math.abs(lz) <= s.d / 2) h = Math.max(h, s.h);
   }
 
   // quarter pipes
@@ -649,6 +674,23 @@ function buildRail(scene, metal, darkMetal, a, b, y, options = {}, batch = null)
   return { ax, az, bx, bz, y, length, width: options.width || 0.5 };
 }
 
+/* Register all four top edges of a rectangular surface as grind lines. */
+function grindRect(rails, x, z, w, d, y, width, rot = 0, kind = 'ledge') {
+  const c = Math.cos(rot), s = Math.sin(rot);
+  const pt = (lx, lz) => [x + lx * c + lz * s, z - lx * s + lz * c];
+  const edges = [
+    [pt(-w / 2, -d / 2), pt(w / 2, -d / 2)],
+    [pt(-w / 2, d / 2), pt(w / 2, d / 2)],
+    [pt(-w / 2, -d / 2), pt(-w / 2, d / 2)],
+    [pt(w / 2, -d / 2), pt(w / 2, d / 2)],
+  ];
+  for (const [[ax, az], [bx, bz]] of edges) {
+    rails.push({
+      ax, az, bx, bz, y, length: Math.hypot(bx - ax, bz - az), width, ledge: true, kind,
+    });
+  }
+}
+
 function flushRailBatch(scene, metal, darkMetal, batch) {
   const unit = new THREE.CylinderGeometry(1, 1, 1, 10);
   const orange = new THREE.MeshStandardMaterial({ color: 0xff5a1f, roughness: 0.6 });
@@ -673,10 +715,12 @@ function flushRailBatch(scene, metal, darkMetal, batch) {
 
 function buildLedge(scene, concrete, graffiti, x, z, w, d, h, rot = 0) {
   const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  group.rotation.y = rot;
+
   const mat = new THREE.MeshStandardMaterial({ map: concrete, color: 0xd6d0c2, roughness: 0.9 });
   const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-  box.position.set(x, h / 2, z);
-  box.rotation.y = rot;
+  box.position.y = h / 2;
   box.castShadow = box.receiveShadow = true;
   group.add(box);
 
@@ -684,13 +728,12 @@ function buildLedge(scene, concrete, graffiti, x, z, w, d, h, rot = 0) {
     new THREE.PlaneGeometry(w * 0.8, h * 0.72),
     new THREE.MeshStandardMaterial({ map: graffiti, transparent: true, roughness: 0.9 })
   );
-  panel.position.set(x, h * 0.5, z + d / 2 + 0.01);
+  panel.position.set(0, h * 0.5, d / 2 + 0.01);
   group.add(panel);
 
   const metal = new THREE.MeshStandardMaterial({ color: 0xb9bcc0, metalness: 0.9, roughness: 0.3 });
   const edge = new THREE.Mesh(new THREE.BoxGeometry(w, 0.055, d + 0.08), metal);
-  edge.position.set(x, h + 0.01, z);
-  edge.rotation.y = rot;
+  edge.position.y = h + 0.01;
   group.add(edge);
   scene.add(group);
 
@@ -941,7 +984,7 @@ export function createWorld(scene, renderer) {
   buildTerrain(scene, concrete);
   buildFunbox(scene, concrete, metal, graffiti2);
   buildQuarterDetails(scene, metal);
-  buildLedge(scene, concrete, graffiti1, 18, 17, 10, 1.2, 0.62);
+  for (const ledge of ledgeDefs) buildLedge(scene, concrete, graffiti1, ledge.x, ledge.z, ledge.w, ledge.d, ledge.h, ledge.rot);
   buildCity(scene);
   buildProps(scene, metal, darkMetal);
 
@@ -978,14 +1021,20 @@ export function createWorld(scene, renderer) {
   rails.push(buildRail(scene, metal, darkMetal, [-27.2, -16], [-27.2, -8], 0.7, { plain: true, width: 0.55 }, railBatch));
   flushRailBatch(scene, metal, darkMetal, railBatch);
 
-  // ledge grind line (the box was built above)
-  rails.push({
-    ax: 13.1, az: 17, bx: 22.9, bz: 17, y: 0.655, length: 9.8, width: 0.9, ledge: true,
-  });
+  // every edge of every ledge, plus the bench top
+  for (const ledge of ledgeDefs) {
+    grindRect(rails, ledge.x, ledge.z, ledge.w, ledge.d, ledge.h + 0.0375, 0.9, ledge.rot);
+  }
+  grindRect(rails, benchDef.x, benchDef.z, benchDef.w, benchDef.d, benchDef.h + 0.01, 0.65, benchDef.rot, 'bench');
 
-  // funbox coping grind lines
-  rails.push({ ax: funbox.x - funbox.halfX, az: funbox.z - funbox.halfZ, bx: funbox.x + funbox.halfX, bz: funbox.z - funbox.halfZ, y: funbox.h + 0.06, length: funbox.halfX * 2, width: 0.7, ledge: true });
-  rails.push({ ax: funbox.x - funbox.halfX, az: funbox.z + funbox.halfZ, bx: funbox.x + funbox.halfX, bz: funbox.z + funbox.halfZ, y: funbox.h + 0.06, length: funbox.halfX * 2, width: 0.7, ledge: true });
+  // funbox coping — all four edges
+  grindRect(rails, funbox.x, funbox.z, funbox.halfX * 2, funbox.halfZ * 2, funbox.h + 0.06, 0.75, 0, 'coping');
+
+  // quarter-pipe coping (catch it on the way back down)
+  rails.push({ ax: -17, az: -26.18, bx: 17, bz: -26.18, y: 4.47, length: 34, width: 0.75, ledge: true, kind: 'coping' });
+  rails.push({ ax: -11, az: 26.18, bx: 11, bz: 26.18, y: 3.77, length: 22, width: 0.75, ledge: true, kind: 'coping' });
+  rails.push({ ax: -36.18, az: -12, bx: -36.18, bz: 12, y: 4.17, length: 24, width: 0.75, ledge: true, kind: 'coping' });
+  rails.push({ ax: 36.18, az: -13, bx: 36.18, bz: 13, y: 3.86, length: 26, width: 0.75, ledge: true, kind: 'coping' });
 
   // launch lips
   const launchPads = [
