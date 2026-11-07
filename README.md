@@ -1,6 +1,6 @@
 # ScratchLab — Browser DJ Booth
 
-A two-deck browser DJ app with a real signed-rate scratch engine, Web MIDI controller support, capacitive platter detection, and drag-and-drop MP3 import. No build step, no uploads — audio stays on the device.
+A two-deck browser DJ app with a real signed-rate scratch engine, Web MIDI controller support, capacitive platter detection, and drag-and-drop MP3 import.
 
 ## Run it
 
