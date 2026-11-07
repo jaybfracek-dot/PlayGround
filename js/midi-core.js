@@ -15,6 +15,11 @@ export const STATUS_NAMES = {
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
 
+/** Identify the Party Mix Live from the Web MIDI input metadata. */
+export function isPartyMixLiveDevice(device) {
+  return /party\s*mix\s*live/i.test(`${device?.manufacturer || ''} ${device?.name || ''}`)
+}
+
 /**
  * Parse a raw Web MIDI message into a friendly object.
  * @param {Uint8Array|number[]} input raw message bytes
