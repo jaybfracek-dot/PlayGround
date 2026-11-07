@@ -1,6 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { decodeRelative, describeMidiMessage, formatBinding, parseMidiMessage } from '../js/midi-core.js'
+import { decodeRelative, describeMidiMessage, formatBinding, isPartyMixLiveDevice, parseMidiMessage } from '../js/midi-core.js'
+
+test('identifies Party Mix Live from device manufacturer or name metadata', () => {
+  assert.equal(isPartyMixLiveDevice({ name: 'Numark Party Mix Live MIDI' }), true)
+  assert.equal(isPartyMixLiveDevice({ manufacturer: 'Numark', name: 'Party Mix Live' }), true)
+  assert.equal(isPartyMixLiveDevice({ name: 'PartyMixLive' }), true)
+  assert.equal(isPartyMixLiveDevice({ name: 'Numark Party Mix' }), false)
+  assert.equal(isPartyMixLiveDevice({ name: 'Other MIDI Controller' }), false)
+  assert.equal(isPartyMixLiveDevice(null), false)
+})
 
 test('parses note on and note off, including velocity-zero note off', () => {
   const on = parseMidiMessage(new Uint8Array([0x90, 60, 100]))

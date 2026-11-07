@@ -20,7 +20,7 @@ Open <http://localhost:3002>. Chrome or Edge is recommended for Web MIDI. Click 
 - **Web MIDI input** — notes, CCs, pitch bend, aftertouch, program changes, and clock/sysex are parsed. A live monitor shows every incoming message and decoded jog delta.
 - **Capacitive vs non-touch platters** — mapping a touch note marks the deck `CAPACITIVE`. In **AUTO** mode, capacitive decks scratch only while touched and pitch-nudge when released; non-touch decks auto-grab on rotation and release after the wheel stops.
 - **Relative decoder modes** — 7-bit two's complement (`64 = 0`), offset, signed-bit, and absolute delta modes, plus adjustable ticks-per-revolution and sensitivity.
-- **MIDI Learn and guided auto-map** — bind any control from MIDI Setup, or run the wizard and move each control once.
+- **MIDI Learn and guided auto-map** — bind any control from MIDI Setup, or run the wizard and move each control once. Party Mix Live devices are identified from Web MIDI metadata and shown a quick-setup guide; mapping still uses Learn/Auto-map rather than guessed message numbers.
 - **Virtual MIDI controller** — test the full MIDI path without hardware; it feeds the same parser as a physical controller.
 - **Two full decks** — play/cue, sync, loops, four hot cues, tempo, 3-band EQ, filter, echo, channel faders, crossfader, master volume, waveforms, and VU meters.
 - **Four demo tracks** — procedurally generated so the app is playable before importing anything.

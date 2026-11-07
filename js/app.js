@@ -2,7 +2,7 @@ import { AudioEngine } from './audio-engine.js'
 import { buildDemoTracks } from './demo-tracks.js'
 import { clamp, computePeaks, estimateBpm, formatTime } from './analysis.js'
 import { CONTROL_TARGETS, MidiManager } from './midi.js'
-import { formatBinding } from './midi-core.js'
+import { formatBinding, isPartyMixLiveDevice } from './midi-core.js'
 
 const $ = (selector, root = document) => root.querySelector(selector)
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector))
@@ -1141,6 +1141,8 @@ function drawDeckWaveform(id) {
 /* ---------------- MIDI ---------------- */
 function updateMidiStatus(info) {
   if (!info) return
+  const partyMixLive = Boolean(info.enabled && info.devices.some(isPartyMixLiveDevice))
+  $('#partyMixGuide').hidden = !partyMixLive
   const connected = Boolean((info.enabled && info.devices.length) || info.virtualEnabled)
   ui.midiStatus.classList.toggle('is-live', connected)
   ui.midiDot.className = `status-chip__dot${connected ? ' is-live' : info.error ? ' is-error' : ''}`
@@ -1156,9 +1158,10 @@ function updateMidiStatus(info) {
     ui.midiDeviceName.textContent = 'MIDI access blocked'
     ui.midiDeviceDetail.textContent = info.error
   } else if (info.enabled && info.devices.length) {
-    ui.midiDeviceName.textContent = info.devices.map((device) => device.name).join(' · ')
-    ui.midiDeviceDetail.textContent = `${info.devices.length} input${info.devices.length === 1 ? '' : 's'} detected · relative jog + touch sensors ready${info.virtualEnabled ? ' · virtual controller active' : ''}`
+    ui.midiDeviceName.textContent = info.devices.map((device) => device.name || device.manufacturer || 'MIDI input').join(' · ')
+    ui.midiDeviceDetail.textContent = `${partyMixLive ? 'Party Mix Live detected · ' : ''}${info.devices.length} input${info.devices.length === 1 ? '' : 's'} detected · map controls before use${info.virtualEnabled ? ' · virtual controller active' : ''}`
   } else if (info.enabled) {
+    $('#partyMixGuide').hidden = true
     ui.midiDeviceName.textContent = 'No MIDI inputs found'
     ui.midiDeviceDetail.textContent = 'Plug in a class-compliant controller, then press RESCAN. You can also use the virtual controller.'
   } else {
