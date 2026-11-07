@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#182b2b" />
+  <title>Meadowmere — a little farm life</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Meadowmere home"><span class="brand-mark">✿</span><span>meadow<span class="brand-light">mere</span></span></a>
+      <div class="top-meta"><span class="season-tag"><i></i> SPRING</span><span class="save-status"><span class="save-dot"></span> Progress saved</span></div>
+      <button class="icon-btn sound-btn" id="soundBtn" title="Toggle sound" aria-label="Toggle sound">♫</button>
+    </header>
+    <section class="game-layout">
+      <div class="world-column">
+        <div class="world-frame">
+          <canvas id="game" width="960" height="600" aria-label="Your farm. Use arrow keys or WASD to move, and select tools to tend crops."></canvas>
+          <div class="world-label"><span class="location-pin">⌖</span> YOUR LITTLE FARM</div>
+          <div class="weather"><span id="weatherIcon">☀</span><span id="weatherText">Sunny</span><b>18°</b></div>
+          <div class="toast" id="toast" aria-live="polite"></div>
+          <div class="sleep-hint" id="sleepHint">Press <kbd>E</kbd> to turn in</div>
+          <div class="mobile-pad" aria-label="Movement controls">
+            <button data-move="up">↑</button><button data-move="left">←</button><button data-move="down">↓</button><button data-move="right">→</button>
+          </div>
+        </div>
+        <div class="toolbar-wrap">
+          <div class="toolbar" id="toolbar" aria-label="Tools and inventory"></div>
+          <div class="energy-wrap"><span>ENERGY</span><div class="energy-track"><div class="energy-fill" id="energyFill"></div></div><b id="energyText">100 / 100</b></div>
+        </div>
+        <div class="world-footer"><span><span class="keycap">WASD</span> move <span class="footer-dot">·</span> <span class="keycap">1—4</span> tools <span class="footer-dot">·</span> click a tile to use</span><span class="zoom-label">A slow morning is a good morning.</span></div>
+      </div>
+      <aside class="sidebar">
+        <section class="day-card">
+          <div class="date-row"><div><div class="eyebrow">A FRESH START</div><h1 id="dateLabel">Day 1 <span>of Spring</span></h1></div><div class="sun-badge">☼</div></div>
+          <div class="day-progress"><span id="timeLabel">6:00 AM</span><div class="time-track"><i id="timeFill"></i></div><span>2:00 AM</span></div>
+        </section>
+        <section class="money-card"><div class="money-icon">◉</div><div><div class="eyebrow">YOUR WALLET</div><strong><span id="gold">500</span> <small>g</small></strong></div><button id="shopBtn" class="shop-link">Market <span>↗</span></button></section>
+        <section class="side-section goals-section"><div class="section-heading"><h2>Today’s little goals</h2><span class="goal-count" id="goalCount">0 / 3</span></div><div id="goals" class="goals"></div></section>
+        <section class="side-section inventory-section"><div class="section-heading"><h2>In your bag</h2><button class="tiny-link" id="sellBtn">Ship all ↗</button></div><div class="inventory-grid" id="inventory"></div></section>
+        <section class="side-section journal-section"><div class="section-heading"><h2>Field notes</h2><span class="journal-icon">✎</span></div><p id="journal">The farmhouse is quiet, the air smells like rain. Let's make something lovely.</p></section>
+        <button class="sleep-button" id="sleepBtn"><span>☾</span> Call it a day <small>End the day &amp; grow crops</small></button>
+      </aside>
+    </section>
+    <footer class="bottomline"><span>MEADOWMERE <i>·</i> A TINY FARMING ADVENTURE</span><span>Made for unhurried days <b>♥</b></span></footer>
+  </main>
+  <div class="modal-backdrop" id="modalBackdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Close">×</button><div class="modal-flower">✿</div><div class="eyebrow">THE VILLAGE MARKET</div><h2 id="modalTitle">A few seeds for the road</h2><p class="modal-intro">A little planting now makes for a lovely harvest later.</p><div id="shopItems" class="shop-items"></div><div class="modal-note">Your seeds are always in your bag. Happy growing!</div></section></div>
+  <script src="game.js"></script>
+</body>
+</html>
