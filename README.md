@@ -20,7 +20,8 @@ Open <http://localhost:3002>. Chrome or Edge is recommended for Web MIDI. Click 
 - **Web MIDI input** — notes, CCs, pitch bend, aftertouch, program changes, and clock/sysex are parsed. A live monitor shows every incoming message and decoded jog delta.
 - **Capacitive vs non-touch platters** — mapping a touch note marks the deck `CAPACITIVE`. In **AUTO** mode, capacitive decks scratch only while touched and pitch-nudge when released; non-touch decks auto-grab on rotation and release after the wheel stops.
 - **Relative decoder modes** — 7-bit two's complement (`64 = 0`), offset, signed-bit, and absolute delta modes, plus adjustable ticks-per-revolution and sensitivity.
-- **MIDI Learn and guided auto-map** — bind any control from MIDI Setup, or run the wizard and move each control once. Party Mix Live devices are identified from Web MIDI metadata and shown a quick-setup guide; mapping still uses Learn/Auto-map rather than guessed message numbers.
+- **MIDI Learn and guided auto-map** — bind any control from MIDI Setup, or run the wizard and move each control once.
+- **Numark Party Mix Live starter profile** — quickly load common deck and mixer bindings, then use MIDI Learn to adjust anything that differs on your unit.
 - **Virtual MIDI controller** — test the full MIDI path without hardware; it feeds the same parser as a physical controller.
 - **Two full decks** — play/cue, sync, loops, four hot cues, tempo, 3-band EQ, filter, echo, channel faders, crossfader, master volume, waveforms, and VU meters.
 - **Four demo tracks** — procedurally generated so the app is playable before importing anything.
@@ -58,7 +59,8 @@ The tests cover MIDI parsing, relative-jog decoding modes, BPM estimation, wavef
 ## Notes and assumptions
 
 - MP3/audio decoding uses the browser's `decodeAudioData`; support follows the browser codec list.
-- MIDI Learn is used instead of hardcoded controller profiles because jog CCs, touch notes, and channels vary between manufacturers.
+- The Party Mix Live starter profile is based on Mixxx's upstream **Numark Party Mix** mapping, not a confirmed Party Mix Live hardware specification. Device revisions or firmware may differ. The profile assumes deck jog CC 6 on channels 1/2, transport notes 0–2 on channels 1/2, performance-pad notes 20–23 on channels 5/6, and mixer controls on channel 16. MIDI Learn is available to correct any mismatch.
+- Loading the profile replaces the current MIDI mappings; mappings persist in `localStorage` and can be changed or cleared in MIDI Setup.
 - The default relative encoding is 7-bit two's complement (`64 = 0`). If your wheel turns the wrong way or feels too sensitive, change **Encoder type**, **Ticks per revolution**, or **Scratch sensitivity** in MIDI Setup.
 - Beat detection is best-effort analysis for imported files; manually verified BPMs are not required for scratching or playback.
 - MIDI mappings, platter settings, and hot cues persist in `localStorage`.
