@@ -75,6 +75,49 @@ export const VIRTUAL_MAPPING = {
   }
 }
 
+const partyCC = (channel, number) => ({ type: 'cc', channel, number })
+const partyNote = (channel, number) => ({ type: 'note', channel, number })
+
+// Numark's upstream Party Mix mapping (also used as a starter for Party Mix Live).
+// Deck controls are on MIDI channels 1/2; pads use channels 5/6; mixer controls use 16.
+export const PARTY_MIX_LIVE_PRESET = {
+  name: 'Numark Party Mix Live',
+  mapping: {
+    deckA: {
+      jog: partyCC(0, 6),
+      play: partyNote(0, 0),
+      cue: partyNote(0, 1),
+      sync: partyNote(0, 2),
+      tempo: partyCC(0, 9),
+      volume: partyCC(0, 28),
+      eqHigh: partyCC(0, 24),
+      eqLow: partyCC(0, 25),
+      pad1: partyNote(4, 20),
+      pad2: partyNote(4, 21),
+      pad3: partyNote(4, 22),
+      pad4: partyNote(4, 23)
+    },
+    deckB: {
+      jog: partyCC(1, 6),
+      play: partyNote(1, 0),
+      cue: partyNote(1, 1),
+      sync: partyNote(1, 2),
+      tempo: partyCC(1, 9),
+      volume: partyCC(1, 28),
+      eqHigh: partyCC(1, 24),
+      eqLow: partyCC(1, 25),
+      pad1: partyNote(5, 20),
+      pad2: partyNote(5, 21),
+      pad3: partyNote(5, 22),
+      pad4: partyNote(5, 23)
+    },
+    mixer: {
+      master: partyCC(15, 10),
+      crossfader: partyCC(15, 8)
+    }
+  }
+}
+
 function emptyMapping() {
   return { deckA: {}, deckB: {}, mixer: {} }
 }
@@ -250,6 +293,17 @@ export class MidiManager {
     this.save()
     this.onLearn?.(null)
     this.onNotice?.('All MIDI mappings cleared')
+  }
+
+  applyPreset(preset = PARTY_MIX_LIVE_PRESET) {
+    if (!preset?.mapping) throw new TypeError('Invalid MIDI mapping preset')
+    this.mapping = structuredClone(preset.mapping)
+    this.learning = null
+    this.lastCC.clear()
+    this.buttonEdges.clear()
+    this.save()
+    this.onLearn?.(null)
+    this.onNotice?.(`${preset.name || 'Controller'} profile loaded · use MIDI Learn to adjust controls`)
   }
 
   startLearn(targetId) {
